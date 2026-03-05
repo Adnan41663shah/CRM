@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%234F46E5'/><text x='16' y='22' font-size='14' font-weight='bold' fill='white' text-anchor='middle' font-family='system-ui'>CRM</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="CRM - Customer Relationship Management system" />
+    <meta name="keywords" content="CRM, Customer Relationship Management, Inquiry Management" />
+    <meta name="author" content="CRM" />
+    <title>CRM</title>
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('theme');
+          // Only apply saved theme, default to light if not saved
+          if (saved === 'dark') {
+            document.documentElement.classList.add('dark');
+            if (document.body) {
+              document.body.classList.add('dark');
+            }
+          } else {
+            // Explicitly remove dark class for light theme
+            document.documentElement.classList.remove('dark');
+            if (document.body) {
+              document.body.classList.remove('dark');
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="h-full">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
