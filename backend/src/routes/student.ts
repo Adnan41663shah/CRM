@@ -20,10 +20,10 @@ try {
 }
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
+  destination: (_req: express.Request, _file: Express.Multer.File, cb: (error: Error | null, dest: string) => void) => {
     cb(null, UPLOAD_DIR);
   },
-  filename: (_req, file, cb) => {
+  filename: (_req: express.Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${path.extname(file.originalname) || ''}`;
     cb(null, safeName);
   },
@@ -34,7 +34,7 @@ const upload = multer({
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB limit unchanged
   },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req: express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     const allowedMimes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-excel',

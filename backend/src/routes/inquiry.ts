@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { body, param } from 'express-validator';
+import { body, param, type Meta } from 'express-validator';
 import {
   createInquiry,
   getInquiries,
@@ -40,8 +40,8 @@ const router = Router();
 // Create inquiry validation
 const createInquiryValidation = [
   body('name')
-    .custom((value, { req }) => {
-      const userRole = req.user?.role;
+    .custom((value: string | undefined, meta: Meta) => {
+      const userRole = (meta.req as { user?: { role?: string } }).user?.role;
       // For sales users, name is required
       if (userRole === 'sales') {
         if (!value || value.trim() === '') {
@@ -57,7 +57,7 @@ const createInquiryValidation = [
     .trim(),
   body('email')
     .optional({ checkFalsy: true })
-    .custom((value) => {
+    .custom((value: string | undefined) => {
       if (!value || value.trim() === '') {
         return true; // Empty email is allowed
       }
@@ -71,7 +71,7 @@ const createInquiryValidation = [
     .normalizeEmail(),
   body('phone')
     .trim()
-    .custom((value) => {
+    .custom((value: string | undefined) => {
       // Phone number should start with + and contain country code + 10 digits
       // Format: +[country code][10 digits] (e.g., +911234567890)
       if (!value || typeof value !== 'string') {
@@ -90,8 +90,8 @@ const createInquiryValidation = [
     })
     .withMessage('Please provide a valid phone number with country code'),
   body('city')
-    .custom((value, { req }) => {
-      const userRole = req.user?.role;
+    .custom((value: string | undefined, meta: Meta) => {
+      const userRole = (meta.req as { user?: { role?: string } }).user?.role;
       // For sales users, city is required
       if (userRole === 'sales') {
         if (!value || value.trim() === '') {
@@ -106,8 +106,8 @@ const createInquiryValidation = [
     })
     .trim(),
   body('education')
-    .custom((value, { req }) => {
-      const userRole = req.user?.role;
+    .custom((value: string | undefined, meta: Meta) => {
+      const userRole = (meta.req as { user?: { role?: string } }).user?.role;
       // For sales users, education is required
       if (userRole === 'sales') {
         if (!value || value.trim() === '') {
@@ -123,8 +123,8 @@ const createInquiryValidation = [
     .trim(),
   body('course')
     .trim()
-    .custom(async (val, { req }) => {
-      const userRole = req.user?.role;
+    .custom(async (val: string | undefined, meta: Meta) => {
+      const userRole = (meta.req as { user?: { role?: string } }).user?.role;
       // For sales users, course is required
       if (userRole === 'sales') {
         if (!val || typeof val !== 'string') {
@@ -141,8 +141,9 @@ const createInquiryValidation = [
           if (!o.courses || !Array.isArray(o.courses) || !o.courses.includes(val)) {
             throw new Error(`Invalid course selection. Allowed courses: ${o.courses?.join(', ') || 'none'}`);
           }
-        } catch (error: any) {
-          if (error.message.includes('Invalid course') || error.message.includes('System configuration')) {
+        } catch (error: unknown) {
+          const msg = error instanceof Error ? error.message : String(error);
+          if (msg.includes('Invalid course') || msg.includes('System configuration')) {
             throw error;
           }
           throw new Error('Error validating course selection');
@@ -152,8 +153,8 @@ const createInquiryValidation = [
     }),
   body('preferredLocation')
     .trim()
-    .custom(async (val, { req }) => {
-      const userRole = req.user?.role;
+    .custom(async (val: string | undefined, meta: Meta) => {
+      const userRole = (meta.req as { user?: { role?: string } }).user?.role;
       // For sales users, preferred location is required
       if (userRole === 'sales') {
         if (!val || typeof val !== 'string') {
@@ -170,8 +171,9 @@ const createInquiryValidation = [
           if (!o.locations || !Array.isArray(o.locations) || !o.locations.includes(val)) {
             throw new Error(`Invalid preferred location. Allowed locations: ${o.locations?.join(', ') || 'none'}`);
           }
-        } catch (error: any) {
-          if (error.message.includes('Invalid preferred location') || error.message.includes('System configuration')) {
+        } catch (error: unknown) {
+          const msg = error instanceof Error ? error.message : String(error);
+          if (msg.includes('Invalid preferred location') || msg.includes('System configuration')) {
             throw error;
           }
           throw new Error('Error validating preferred location');
@@ -181,7 +183,7 @@ const createInquiryValidation = [
     }),
   body('medium')
     .trim()
-    .custom(async (val) => {
+    .custom(async (val: string | undefined) => {
       if (!val || typeof val !== 'string') {
         throw new Error('Medium is required');
       }
@@ -194,16 +196,17 @@ const createInquiryValidation = [
           throw new Error(`Invalid medium. Allowed mediums: ${o.mediums?.join(', ') || 'none'}`);
         }
         return true;
-      } catch (error: any) {
-        if (error.message.includes('Invalid medium') || error.message.includes('System configuration')) {
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes('Invalid medium') || msg.includes('System configuration')) {
           throw error;
         }
         throw new Error('Error validating medium');
       }
     }),
   body('message')
-    .custom((value, { req }) => {
-      const userRole = req.user?.role;
+    .custom((value: string | undefined, meta: Meta) => {
+      const userRole = (meta.req as { user?: { role?: string } }).user?.role;
       // For presales and admin users, message is required
       if (userRole === 'presales' || userRole === 'admin') {
         if (!value || typeof value !== 'string' || value.trim() === '') {
@@ -228,7 +231,7 @@ const createInquiryValidation = [
   body('status')
     .optional()
     .trim()
-    .custom(async (val) => {
+    .custom(async (val: string | undefined) => {
       if (!val) return true;
       try {
         const o = await OptionSettings.findOne({ key: 'global' });
@@ -239,8 +242,9 @@ const createInquiryValidation = [
           throw new Error(`Invalid status. Allowed statuses: ${o.statuses?.join(', ') || 'none'}`);
         }
         return true;
-      } catch (error: any) {
-        if (error.message.includes('Invalid status') || error.message.includes('System configuration')) {
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes('Invalid status') || msg.includes('System configuration')) {
           throw error;
         }
         throw new Error('Error validating status');
@@ -257,7 +261,7 @@ const updateInquiryValidation = [
     .withMessage('Name must be between 2 and 50 characters'),
   body('email')
     .optional({ checkFalsy: true })
-    .custom((value) => {
+    .custom((value: string | undefined) => {
       if (!value || value.trim() === '') {
         return true; // Empty email is allowed
       }
@@ -272,7 +276,7 @@ const updateInquiryValidation = [
   body('phone')
     .optional()
     .trim()
-    .custom((value) => {
+    .custom((value: string | undefined) => {
       if (!value) return true; // Optional field
       // Phone number should start with + and contain country code + 10 digits
       // Format: +[country code][10 digits] (e.g., +911234567890)
@@ -300,7 +304,7 @@ const updateInquiryValidation = [
   body('course')
     .optional()
     .trim()
-    .custom(async (val) => {
+    .custom(async (val: string | undefined) => {
       if (!val) return true;
       try {
         const o = await OptionSettings.findOne({ key: 'global' });
@@ -311,8 +315,9 @@ const updateInquiryValidation = [
           throw new Error(`Invalid course selection. Allowed courses: ${o.courses?.join(', ') || 'none'}`);
         }
         return true;
-      } catch (error: any) {
-        if (error.message.includes('Invalid course') || error.message.includes('System configuration')) {
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes('Invalid course') || msg.includes('System configuration')) {
           throw error;
         }
         throw new Error('Error validating course selection');
@@ -321,7 +326,7 @@ const updateInquiryValidation = [
   body('preferredLocation')
     .optional()
     .trim()
-    .custom(async (val) => {
+    .custom(async (val: string | undefined) => {
       if (!val) return true;
       try {
         const o = await OptionSettings.findOne({ key: 'global' });
@@ -332,8 +337,9 @@ const updateInquiryValidation = [
           throw new Error(`Invalid preferred location. Allowed locations: ${o.locations?.join(', ') || 'none'}`);
         }
         return true;
-      } catch (error: any) {
-        if (error.message.includes('Invalid preferred location') || error.message.includes('System configuration')) {
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes('Invalid preferred location') || msg.includes('System configuration')) {
           throw error;
         }
         throw new Error('Error validating preferred location');
@@ -342,7 +348,7 @@ const updateInquiryValidation = [
   body('medium')
     .optional()
     .trim()
-    .custom(async (val) => {
+    .custom(async (val: string | undefined) => {
       if (!val) return true;
       try {
         const o = await OptionSettings.findOne({ key: 'global' });
@@ -353,8 +359,9 @@ const updateInquiryValidation = [
           throw new Error(`Invalid medium. Allowed mediums: ${o.mediums?.join(', ') || 'none'}`);
         }
         return true;
-      } catch (error: any) {
-        if (error.message.includes('Invalid medium') || error.message.includes('System configuration')) {
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes('Invalid medium') || msg.includes('System configuration')) {
           throw error;
         }
         throw new Error('Error validating medium');
@@ -368,7 +375,7 @@ const updateInquiryValidation = [
   body('status')
     .optional()
     .trim()
-    .custom(async (val) => {
+    .custom(async (val: string | undefined) => {
       if (!val) return true;
       try {
         const o = await OptionSettings.findOne({ key: 'global' });
@@ -379,8 +386,9 @@ const updateInquiryValidation = [
           throw new Error(`Invalid status. Allowed statuses: ${o.statuses?.join(', ') || 'none'}`);
         }
         return true;
-      } catch (error: any) {
-        if (error.message.includes('Invalid status') || error.message.includes('System configuration')) {
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes('Invalid status') || msg.includes('System configuration')) {
           throw error;
         }
         throw new Error('Error validating status');
@@ -424,7 +432,7 @@ const addFollowUpValidation = [
   // Sales-specific fields - Dynamic validation
   body('leadStage')
     .optional()
-    .custom(async (value) => {
+    .custom(async (value: string | undefined) => {
       if (!value) return true; // Optional field
       const leadStages = await getLeadStages();
       const validLabels = leadStages.map(stage => stage.label);
@@ -436,7 +444,7 @@ const addFollowUpValidation = [
   body('subStage')
     .optional({ checkFalsy: true })
     .trim()
-    .custom(async (value, { req }) => {
+    .custom(async (value: string | undefined, meta: Meta) => {
       if (!value || value.trim() === '') {
         return true; // Empty subStage is allowed
       }
@@ -444,7 +452,7 @@ const addFollowUpValidation = [
         throw new Error('Sub-stage must be between 1 and 200 characters');
       }
       // Validate sub-stage belongs to selected lead stage
-      const leadStage = req.body.leadStage;
+      const leadStage = (meta.req as { body?: { leadStage?: string } }).body?.leadStage;
       if (leadStage) {
         const leadStages = await getLeadStages();
         const selectedStage = leadStages.find(stage => stage.label === leadStage);
@@ -509,7 +517,7 @@ const updateFollowUpValidation = [
   // Sales-specific fields - Dynamic validation
   body('leadStage')
     .optional()
-    .custom(async (value) => {
+    .custom(async (value: string | undefined) => {
       if (!value) return true; // Optional field
       const leadStages = await getLeadStages();
       const validLabels = leadStages.map(stage => stage.label);
@@ -521,7 +529,7 @@ const updateFollowUpValidation = [
   body('subStage')
     .optional({ checkFalsy: true })
     .trim()
-    .custom(async (value, { req }) => {
+    .custom(async (value: string | undefined, meta: Meta) => {
       if (!value || value.trim() === '') {
         return true; // Empty subStage is allowed
       }
@@ -529,7 +537,7 @@ const updateFollowUpValidation = [
         throw new Error('Sub-stage must be between 1 and 200 characters');
       }
       // Validate sub-stage belongs to selected lead stage
-      const leadStage = req.body.leadStage;
+      const leadStage = (meta.req as { body?: { leadStage?: string } }).body?.leadStage;
       if (leadStage) {
         const leadStages = await getLeadStages();
         const selectedStage = leadStages.find(stage => stage.label === leadStage);

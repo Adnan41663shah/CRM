@@ -40,7 +40,7 @@ export const initializeSocket = (httpServer: HttpServer): SocketServer => {
   });
 
   // Authentication middleware for Socket.IO
-  io.use(async (socket, next) => {
+  io.use(async (socket: Socket, next: (err?: Error) => void) => {
     try {
       const token = socket.handshake.auth.token;
       
@@ -105,7 +105,7 @@ export const initializeSocket = (httpServer: HttpServer): SocketServer => {
     });
 
     // Handle errors
-    socket.on('error', (error) => {
+    socket.on('error', (error: Error) => {
       logger.error(`Socket error for ${socket.id}:`, error);
     });
   });

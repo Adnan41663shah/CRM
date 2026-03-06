@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -43,7 +43,7 @@ const initializeServer = async () => {
   app.use(mongoSanitize());
 
   // Response compression (gzip) - smaller payloads, faster transfer
-  app.use(compression());
+  app.use(compression() as unknown as express.RequestHandler);
 
   // Rate limiting (in-memory store)
   const isProduction = (process.env.NODE_ENV || 'development') === 'production';
@@ -90,7 +90,7 @@ const initializeServer = async () => {
   app.use(cookieParser());
 
   // Request logging - in production, log only a sample (1 in 10) to reduce I/O
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     if (!isProduction || Math.random() < 0.1) {
       logger.info(`${req.method} ${req.url}`, { ip: req.ip, userAgent: req.get('User-Agent') });
     }
@@ -116,7 +116,7 @@ const initializeServer = async () => {
   }
 
   // 404 handler
-  app.use('*', (req, res) => {
+  app.use('*', (req: Request, res: Response) => {
     logger.warn(`404 - Route not found: ${req.method} ${req.originalUrl}`, {
       path: req.path,
       baseUrl: req.baseUrl,

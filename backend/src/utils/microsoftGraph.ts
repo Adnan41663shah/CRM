@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { URLSearchParams } from 'node:url';
 import logger from './logger';
 
 interface TokenCache {
@@ -93,10 +94,11 @@ class MicrosoftGraphService {
 
       logger.info('Microsoft Graph access token obtained successfully');
       return access_token;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; response?: { status?: number } };
       logger.error('Failed to obtain Microsoft Graph access token', {
-        error: error.message,
-        status: error.response?.status,
+        error: err.message,
+        status: err.response?.status,
       });
       throw new Error('Authentication failed: Unable to obtain access token');
     }
@@ -143,17 +145,18 @@ class MicrosoftGraphService {
 
       logger.info(`Fetched ${normalizedUsers.length} users from Microsoft Graph`);
       return normalizedUsers;
-    } catch (error: any) {
-      if (error.response?.status === 401 || error.response?.status === 403) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; response?: { status?: number } };
+      if (err.response?.status === 401 || err.response?.status === 403) {
         logger.error('Microsoft Graph authentication/permission error', {
-          status: error.response.status,
+          status: err.response.status,
         });
         throw new Error('Admin consent required: Please grant application permissions in Azure AD');
       }
 
       logger.error('Failed to fetch users from Microsoft Graph', {
-        error: error.message,
-        status: error.response?.status,
+        error: err.message,
+        status: err.response?.status,
       });
       throw new Error('Unable to fetch Office365 users');
     }
